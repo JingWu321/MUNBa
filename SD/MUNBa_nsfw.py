@@ -243,28 +243,28 @@ def MUNBa(classes,
                         grad = torch.autograd.grad(loss, parameters, retain_graph=True)[0]
                         grads[task] = torch.cat([torch.flatten(g.detach()) for g in grad])
 
-                    # ############# [1] Choose to use the iterative solution
-                    # prvs_alpha = return_weights(grads, prvs_alpha, G_param, normalization_factor_param,
-                    #                             alpha_param, prvs_alpha_param, prob)
-                    # print(f'prvs_alpha: {prvs_alpha}')
-                    # if np.all(prvs_alpha == 1): # Bargaining failed
-                    #     # continue
-                    #     loss = loss_r + loss_u * 0.1
-                    # else:
-                    #     loss = loss_r * prvs_alpha[0] + loss_u * prvs_alpha[1]
-
-                    ############ [2] Choose to use the closed-form solution
-                    g1 = torch.dot(grads[0], grads[0])
-                    g2 = torch.dot(grads[0], grads[1])
-                    g3 = torch.dot(grads[1], grads[1])
-                    prvs_alpha[0] = torch.sqrt( (g1*g3 - g2*torch.sqrt(g1*g3)) / (g1*g1*g3 - g1*g2*g2 + 1e-8) )
-                    prvs_alpha[1] = (1 - g1 * prvs_alpha[0] * prvs_alpha[0]) / (g2*prvs_alpha[0] + 1e-8)
+                    ############# [1] Choose to use the iterative solution
+                    prvs_alpha = return_weights(grads, prvs_alpha, G_param, normalization_factor_param,
+                                                alpha_param, prvs_alpha_param, prob)
                     print(f'prvs_alpha: {prvs_alpha}')
-                    if prvs_alpha[0] > 0 and prvs_alpha[1] > 0: # Bargaining succeeded
-                        loss = loss_r * prvs_alpha[0] + loss_u * prvs_alpha[1]
-                    else:
+                    if np.all(prvs_alpha == 1): # Bargaining failed
                         # continue
-                        loss = loss_r + loss_u * 0.5
+                        loss = loss_r + loss_u * 0.1
+                    else:
+                        loss = loss_r * prvs_alpha[0] + loss_u * prvs_alpha[1]
+
+                    # ############ [2] Choose to use the closed-form solution
+                    # g1 = torch.dot(grads[0], grads[0])
+                    # g2 = torch.dot(grads[0], grads[1])
+                    # g3 = torch.dot(grads[1], grads[1])
+                    # prvs_alpha[0] = torch.sqrt( (g1*g3 - g2*torch.sqrt(g1*g3)) / (g1*g1*g3 - g1*g2*g2 + 1e-8) )
+                    # prvs_alpha[1] = (1 - g1 * prvs_alpha[0] * prvs_alpha[0]) / (g2*prvs_alpha[0] + 1e-8)
+                    # print(f'prvs_alpha: {prvs_alpha}')
+                    # if prvs_alpha[0] > 0 and prvs_alpha[1] > 0: # Bargaining succeeded
+                    #     loss = loss_r * prvs_alpha[0] + loss_u * prvs_alpha[1]
+                    # else:
+                    #     # continue
+                    #     loss = loss_r + loss_u * 0.5
                 #####################################################
                 else:
                     loss = loss_r + args.lam * loss_u
