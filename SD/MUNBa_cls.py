@@ -102,7 +102,7 @@ def MUNBa(
     forget_dl, _ = setup_forget_data(class_to_forget, batch_size, image_size)
 
     #### Convex Optimization Problem (bargaining game) Initialization ####
-    if args.munba:
+    if args.nash:
         n_tasks = 2 # K
         init_gtg = np.eye(n_tasks) # G^T G: gradient matrix product, shape: [K, K]
         G_param = cp.Parameter(shape=(n_tasks, n_tasks), value=init_gtg) # will be updated in-loop with the current GTG
@@ -240,7 +240,6 @@ def MUNBa(
                 pseudo_out = model.apply_model(pseudo_noisy, t, pseudo_emb).detach()
 
                 loss_u = criteria(forget_out, pseudo_out) * beta
-                # loss_u = -model.shared_step(forget_batch)[0]
 
                 #####################################################
                 if args.munba:
@@ -291,7 +290,7 @@ def MUNBa(
                 gc.collect()
 
                 if (step+1) % 10 == 0:
-                    if args.munba:
+                    if args.nash:
                         print(f"step: {step}, loss: {loss:.4f}, loss_r: {loss_r * prvs_alpha[0]:.4f}, loss_u: {loss_u * prvs_alpha[1]:.4f}")
                     else:
                         print(f"step: {step}, loss: {loss:.4f}, loss_r: {loss_r:.4f}, loss_u: {args.lam * loss_u:.4f}")
@@ -429,7 +428,7 @@ if __name__ == "__main__":
         help="config path for stable diffusion v1-4 inference",
         type=str,
         required=False,
-        default="configs/stable-diffusion/v1-inference-munba.yaml",
+        default="configs/stable-diffusion/v1-inference-nash.yaml",
     )
     parser.add_argument(
         "--diffusers_config_path",
@@ -459,11 +458,11 @@ if __name__ == "__main__":
         required=False,
         default=50,
     )
-    parser.add_argument("--with_l1", action="store_true", default=False)
-    parser.add_argument("--alpha", type=float, default=1e-4)
-    ##################################### MUNBa setting #################################################
+    ##################################### Nash setting #################################################
     parser.add_argument("--munba", default=False, action='store_true',)
-    parser.add_argument("--beta", type=float, default=100.0)
+    parser.add_argument("--with_l1", action="store_true", default=False)
+    parser.add_argument("--beta", type=float, default=1.0)
+    parser.add_argument("--alpha", type=float, default=1e-4)
 
     args = parser.parse_args()
 
@@ -502,4 +501,5 @@ if __name__ == "__main__":
     )
 
 
+python MUNBa_cls.py --config_path './configs/stable-diffusion/v1-inference_nash.yaml' --munba --class_to_forget 0 --train_method 'xattn' --lr 1e-5 --epochs 2 --device '0' --batch_size 4 --beta 1 --with_l1 --alpha 1e-4
 
